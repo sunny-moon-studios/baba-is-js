@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Baba Is JS</title>
+  <style>
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    background: #15181f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  </style>
+</head>
+<body>
+<canvas id="game" style="background: #080808"></canvas>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d'); // Your canvas 2D context
+
+const spritesheets = {
+  characters: new Image(),
+  statics: new Image(),
+  tiles: new Image(),
+  text: new Image()
+};
+
+spritesheets.characters.src = "spritesheetCharacters.png";
+spritesheets.statics.src = "spritesheetStatics.png";
+spritesheets.tiles.src = "spritesheetTiles.png";
+spritesheets.text.src = "spritesheetText.png";
+
+//AssetPosition types: 0 = Nouns, 1 = Operators, 2 = Properties
+const assetPositions = {
+  "BABA": {sheet: spritesheets.characters, col: 26,  row: 1,    color: [3, 20, 21],  type: 0},
+  "WALL": {sheet: spritesheets.tiles,      col: 26,  row: 1501, color: [6, 6, 1],    type: 0},
+  "ROCK": {sheet: spritesheets.statics,    col: 151, row: 601,  color: [32, 31, 32], type: 0},
+  "FLAG": {sheet: spritesheets.statics,    col: 26,  row: 226,  color: [14, 32, 14], type: 0},
+  "TILE": {sheet: spritesheets.statics,    col: 151, row: 751,  color: [0, 6, 1],    type: 0},
+  "IS":   {sheet: spritesheets.text,       col: 251, row: 76,   color: [3, 1, 3],    type: 1},
+  "YOU":  {sheet: spritesheets.text,       col: 251, row: 226,  color: [3, 20, 21],  type: 2}
+  // ...add more as needed
+};
+
+const levelData = {
+  1: {width: 33, height: 18},
+  // ...add more as needed
+};
+
+// Colors are taken in top-to-bottom, left-to-right order from spritesheetColors.png
+const palette = [
+  "#242424",
+  "#737373",
+  "#c3c3c3",
+  "#ffffff",
+  "#080808",
+  "#15181f",
+  "#293141",
+  "#3e7688",
+  "#5f9dd1",
+  "#83c8e5",
+  "#421910",
+  "#82261c",
+  "#e5533b",
+  "#e49950",
+  "#ede285",
+  "#603981",
+  "#8e5e9c",
+  "#4759b1",
+  "#557ae0",
+  "#ffbd47",
+  "#682e4c",
+  "#d9396a",
+  "#eb91ca",
+  "#294891",
+  "#73abf3",
+  "#303824",
+  "#4b5c1c",
+  "#5c8339",
+  "#a5b13f",
+  "#b6d340",
+  "#503f24",
+  "#90673e",
+  "#c29e46",
+  "#362e22",
+  "#0b0b0e",
+];
+
+const gameObjects = [
+  { type: "TILE", x: 12, y: 10 },
+  { type: "TILE", x: 13, y: 10 },
+  { type: "TILE", x: 14, y: 10 },
+  { type: "TILE", x: 15, y: 10 },
+  { type: "TILE", x: 16, y: 10 },
+  { type: "TILE", x: 17, y: 10 },
+  { type: "TILE", x: 18, y: 10 },
+  { type: "TILE", x: 19, y: 10 },
+  { type: "TILE", x: 20, y: 10 },
+  { type: "TILE", x: 21, y: 10 },
+  { type: "TILE", x: 22, y: 10 },
+  { type: "TILE", x: 12, y: 11 },
+  { type: "TILE", x: 13, y: 11 },
+  { type: "TILE", x: 14, y: 11 },
+  { type: "TILE", x: 15, y: 11 },
+  { type: "TILE", x: 16, y: 11 },
+  { type: "TILE", x: 17, y: 11 },
+  { type: "TILE", x: 18, y: 11 },
+  { type: "TILE", x: 19, y: 11 },
+  { type: "TILE", x: 20, y: 11 },
+  { type: "TILE", x: 21, y: 11 },
+  { type: "TILE", x: 22, y: 11 },
+  { type: "TILE", x: 12, y: 12 },
+  { type: "TILE", x: 13, y: 12 },
+  { type: "TILE", x: 14, y: 12 },
+  { type: "TILE", x: 15, y: 12 },
+  { type: "TILE", x: 16, y: 12 },
+  { type: "TILE", x: 17, y: 12 },
+  { type: "TILE", x: 18, y: 12 },
+  { type: "TILE", x: 19, y: 12 },
+  { type: "TILE", x: 20, y: 12 },
+  { type: "TILE", x: 21, y: 12 },
+  { type: "TILE", x: 22, y: 12 },
+  { type: "WALL", x: 12, y: 9  },
+  { type: "WALL", x: 13, y: 9  },
+  { type: "WALL", x: 14, y: 9  },
+  { type: "WALL", x: 15, y: 9  },
+  { type: "WALL", x: 16, y: 9  },
+  { type: "WALL", x: 17, y: 9  },
+  { type: "WALL", x: 18, y: 9  },
+  { type: "WALL", x: 19, y: 9  },
+  { type: "WALL", x: 20, y: 9  },
+  { type: "WALL", x: 21, y: 9  },
+  { type: "WALL", x: 22, y: 9  },
+  { type: "WALL", x: 12, y: 13 },
+  { type: "WALL", x: 13, y: 13 },
+  { type: "WALL", x: 14, y: 13 },
+  { type: "WALL", x: 15, y: 13 },
+  { type: "WALL", x: 16, y: 13 },
+  { type: "WALL", x: 17, y: 13 },
+  { type: "WALL", x: 18, y: 13 },
+  { type: "WALL", x: 19, y: 13 },
+  { type: "WALL", x: 20, y: 13 },
+  { type: "WALL", x: 21, y: 13 },
+  { type: "WALL", x: 22, y: 13 },
+  { type: "ROCK", x: 17, y: 10 },
+  { type: "ROCK", x: 17, y: 11 },
+  { type: "ROCK", x: 17, y: 12 },
+  { type: "FLAG", x: 21, y: 11 },
+  { type: "BABA", x: 13, y: 11 },
+  { type: "baba", x: 12, y: 7  },
+  { type: "is",   x: 13, y: 7  },
+  { type: "you" , x: 14, y: 7  }
+  // etc.
+];
+
+gameObjects.forEach((obj) => {
+  obj.text = obj.type === obj.type.toLowerCase();
+  obj.type = obj.type.toUpperCase();
+  obj.active = 0
+  
+  obj.dir = 0;
+  obj.state = 0;
+  if (assetPositions[obj.type].sheet === spritesheets.characters) {obj.state = obj.dir * 4;}
+  
+  obj.frameSeed = Math.floor(Math.random() * 3);
+  
+  obj.lastx = obj.x;
+  obj.lasty = obj.y;
+});
+
+const colorizedSpriteCache = {};
+
+// Colorize a sprite (multiply blend) and cache it
+function getColorizedSprite(asset, frameIndex, spriteState, color) { 
+  const size = 24;
+  const sheet = asset.sheet;
+  
+  if (!sheet.complete || !sheet.naturalWidth) {
+    // Sheet not loaded yet, skip drawing to avoid colored blocks
+    return null;
+  }
+  
+  const sheetName = Object.keys(spritesheets).find(key => spritesheets[key] === asset.sheet);
+  const cacheKey = asset.type + "_" + frameIndex + "_" + spriteState;
+
+  if (colorizedSpriteCache[cacheKey]) {
+    return colorizedSpriteCache[cacheKey];
+  }
+
+  // Create offscreen canvas
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = size;
+  offCanvas.height = size;
+  const offCtx = offCanvas.getContext('2d');
+
+  // 1. Draw the grayscale sprite
+  offCtx.clearRect(0, 0, size, size);
+  offCtx.drawImage(
+    asset.sheet,
+    asset.col + (size + 1) * spriteState, asset.row + (size + 1) * frameIndex,
+    size, size,
+    0, 0, size, size
+  );
+
+  // 2. Multiply blend with color
+  offCtx.globalCompositeOperation = 'multiply';
+  offCtx.fillStyle = color;
+  offCtx.fillRect(0, 0, size, size);
+
+  // 3. Keep alpha
+  offCtx.globalCompositeOperation = 'destination-in';
+  offCtx.drawImage(
+    asset.sheet,
+    asset.col + (size + 1) * spriteState, asset.row + (size + 1) * frameIndex,
+    size, size,
+    0, 0, size, size
+  );
+
+  // Restore
+  offCtx.globalCompositeOperation = 'source-over';
+
+  colorizedSpriteCache[cacheKey] = offCanvas;
+  return offCanvas;
+}
+
+function parseText() {
+  const text = gameObjects.filter((obj) => (obj.text));
+  
+  const nouns = text.filter((obj) => (assetPositions[obj.type].type === 0));
+  const operators = text.filter((obj) => (assetPositions[obj.type].type === 1));
+  const properties = text.filter((obj) => (assetPositions[obj.type].type === 2));
+  
+  nouns.forEach((noun) => {
+    if (gameObjects.find((is) => (is.type === "IS" && is.x === noun.x + 1 && is.y === noun.y))) {
+	  properties.filter((prop) => (prop.x === noun.x + 2 && prop.y === noun.y)).forEach((prop) => {
+	    noun.active = true;
+		prop.active = true;
+		operators.forEach((oper) => (oper.active = (oper.x === noun.x + 1 && oper.y === noun.y)))
+      })
+	}
+  });
+}
+
+function connectTiles() {
+  gameObjects.forEach((obj) => {
+    if (assetPositions[obj.type].sheet === spritesheets.tiles) {
+	  obj.state = 0
+	  if (gameObjects.find((oth) => (obj.x === levelData[1].width || (oth.type === obj.type && oth.x === obj.x + 1 && oth.y === obj.y)))) {
+	    obj.state += 1
+	  }
+      if (gameObjects.find((oth) => (obj.y === 1 || (oth.type === obj.type && oth.y === obj.y - 1 && oth.x === obj.x)))) {
+	    obj.state += 2
+	  }
+	  if (gameObjects.find((oth) => (obj.x === 1 || (oth.type === obj.type && oth.x === obj.x - 1 && oth.y === obj.y)))) {
+	    obj.state += 4
+	  }
+	  if (gameObjects.find((oth) => (obj.y === levelData[1].height || (oth.type === obj.type && oth.y === obj.y + 1 && oth.x === obj.x)))) {
+	    obj.state += 8
+	  }
+    }
+  });
+}
+
+function drawAsset(ctx, assetName, x, y, frameIndex = 0, spriteState = 0, color) {
+  const asset = assetPositions[assetName];
+  const sheet = asset.sheet;
+  const unitX = canvas.width / levelData[1].width
+  const unitY = canvas.height / levelData[1].height
+
+  const size = 24;
+  
+  const colorized = getColorizedSprite(
+      {...asset, type: assetName}, // asset, with type info
+      frameIndex,
+      spriteState,
+      color
+  );
+  ctx.drawImage(
+    colorized,
+    0, 0, size, size,
+    (x - 1) * unitX, (y - 1) * unitY,
+    unitX, unitY
+  );
+}
+
+var everythingLoaded = false
+
+function loadSpritesheets(callback) {
+  if (everythingLoaded === true) {
+    callback();
+  } else {
+    let loaded = 0
+    const total = Object.keys(spritesheets).length;
+    for (const key in spritesheets) {
+      spritesheets[key].onload = () => {
+        loaded++;
+        if (loaded === total) 
+	      everythingLoaded = true;
+		  callback();
+      };
+    }
+  }
+}
+
+function drawScene() {
+  ctx.fillStyle = "#080808";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  let realProg = 1;
+  if (animatingS) {
+    realProg = (prog / animationSpeedS)
+	realProg = 1 - (1 - realProg) * (1 - realProg)
+  }
+  
+  // Draw each game object
+  for (const obj of gameObjects) {
+    x = (obj.x * realProg) + (obj.lastx * (1 - realProg));
+    y = (obj.y * realProg) + (obj.lasty * (1 - realProg));
+    drawAsset(
+	  ctx, obj.type,
+	  (obj.x * realProg) + (obj.lastx * (1 - realProg)),
+	  (obj.y * realProg) + (obj.lasty * (1 - realProg)),
+	  (animationFrame + obj.frameSeed) % 3,
+	  obj.text ? -1 : obj.state,
+	  palette[assetPositions[obj.type].color[obj.text + obj.active]]);
+  }
+}
+
+let animationStarted = false;
+// Function to resize canvas to window size
+function resizeCanvas() {
+  marginSize = 88
+  aspectRatio = levelData[1].width / levelData[1].height
+  canvas.height = ((window.innerHeight - marginSize) * aspectRatio > window.innerWidth - marginSize) ? (window.innerWidth - marginSize) / aspectRatio: window.innerHeight - marginSize;
+  canvas.width = canvas.height * aspectRatio;
+  if (window.innerHeight < marginSize)
+	canvas.height = ((window.innerHeight) * aspectRatio > window.innerWidth) ? (window.innerWidth) / aspectRatio: window.innerHeight;
+	canvas.width = canvas.height * aspectRatio;
+  loadSpritesheets(() => {
+    ctx.imageSmoothingEnabled = false;
+    drawScene();
+	if (!animationStarted) {
+      animationStarted = true;
+      requestAnimationFrame(animate);
+    }
+  });
+}
+
+const animationSpeed = 150; // ms per frame
+let animationFrame = 0;
+let lastFrameTime = 0;
+
+const animationSpeedS = 100;
+let animatingS = false;
+let lastFrameTimeS = 0;
+let prog = 0;
+
+function animate(time) {
+  if (time - lastFrameTime > animationSpeed) {
+    animationFrame++;
+    lastFrameTime = time;
+  }
+  if (animatingS) {
+	if (time - lastFrameTimeS > animationSpeedS) {
+	  animatingS = false;
+	}
+  } else {
+    lastFrameTimeS = time
+  }
+  prog = time - lastFrameTimeS;
+  
+  drawScene();
+  requestAnimationFrame(animate);
+}
+
+parseText();
+// Initial tile connection
+connectTiles();
+// Initial resize
+resizeCanvas();
+
+// Listen for window resize
+window.addEventListener('resize', resizeCanvas);
+
+window.addEventListener('keydown', function(event) {
+  if (event.repeat || prog != 0) return; // Ignore auto-repeats and when animating smooth movement
+  for (const obj of gameObjects) {
+    if (!obj.text) {
+      if (obj.type === "BABA") {
+	    let arrowKeyPressed = event.key.startsWith("Arrow");
+	    if (arrowKeyPressed) {
+	      obj.lastx = obj.x;
+		  obj.lasty = obj.y;
+	    }
+        switch(event.key) {
+          case 'ArrowRight': if (obj.x != levelData[1].width)  {obj.x += 1; obj.dir = 0} break;
+		  case 'ArrowUp':    if (obj.y != 1)                   {obj.y -= 1; obj.dir = 1} break;
+          case 'ArrowLeft':  if (obj.x != 1)                   {obj.x -= 1; obj.dir = 2} break;
+          case 'ArrowDown':  if (obj.y != levelData[1].height) {obj.y += 1; obj.dir = 3} break;
+        }
+	    if (arrowKeyPressed) {
+	      animatingS = true;
+	    }
+	    if (assetPositions[obj.type].sheet === spritesheets.characters) {
+	      obj.state = ((obj.state + 1) % 4) + (4 * obj.dir);
+	    }
+      }
+	}
+  }
+  connectTiles();
+});
+</script>
+</body>
+</html>
