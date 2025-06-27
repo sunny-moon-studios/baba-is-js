@@ -2,7 +2,7 @@
 <html>
 <head>
 	<title>Baba Is JS</title>
-	<link rel="icon" type="image/x-icon" href="favicon.png">
+	<link rel="icon" type="image/x-icon" href="favicon.ico">
 	<style>
 	html, body {
 		height: 100%;
@@ -22,36 +22,98 @@
 <div id="startScreen" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:#222;color:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;">
   <button id="startBtn">Start Game</button>
 </div>
-<audio id="bgm" src="Music/Wall Is Stop.mp3" loop preload="auto"></audio>
-<audio id="win" src="Sound Effects/021.ogg" preload="auto"></audio>
-<audio id="walk" src="Sound Effects/044.ogg" preload="auto"></audio>
 <script>
-document.getElementById('startBtn').addEventListener('click', () => {	
-    document.getElementById('startScreen').style.display = 'none';
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+const musicGain = audioCtx.createGain();    // For background music
+const sfxGain = audioCtx.createGain();      // For sound effects
+let musicSource = null;
+
+musicGain.connect(audioCtx.destination);
+sfxGain.connect(audioCtx.destination);
+
+const soundBuffers = {};
+
+// Load and decode an audio file
+function loadSound(name, url) {
+	return fetch(url)
+		.then(res => {return res.arrayBuffer();})
+		.then(data => audioCtx.decodeAudioData(data))
+		.then(buffer => {soundBuffers[name] = buffer;})
+}
+
+// Play a sound by name
+function playMusic(name) {
+	// Stop previous music if playing
+    if (musicSource) {
+        musicSource.stop();
+        musicSource.disconnect();
+    }
+    // Create and start new source
+    musicSource = audioCtx.createBufferSource();
+    musicSource.buffer = soundBuffers[name];
+    musicSource.loop = true;
+    musicSource.connect(musicGain);
+    musicSource.start(0); // Start from beginning
+}
+
+// Play a sound by name
+function playSFX(name, volume = 1.0, loop = false) {
+	const sfxSource = audioCtx.createBufferSource();
+    sfxSource.buffer = soundBuffers[name];
+	sfxSource.loop = loop;
+
+    // Create a gain node for this specific SFX
+    const sfxVolume = audioCtx.createGain();
+    sfxVolume.gain.value = volume; // 0.0 = silent, 1.0 = full volume
+
+    // Connect: source → gain → destination
+    sfxSource.connect(sfxVolume);
+    sfxVolume.connect(audioCtx.destination);
+
+    sfxSource.start();
+	return sfxSource;
+}
+
+const overworldSoundPromise = loadSound('Overworld', 'Music/Wall Is Stop.ogg');
+const mapSoundPromise = loadSound('Map', 'Music/On the island.ogg');
+
+document.getElementById('startBtn').addEventListener('click', async () => {	
+	document.getElementById('startScreen').innerHTML = 'Loading...';
+	
 	const canvas = document.getElementById('game');
 	const ctx = canvas.getContext('2d'); // Your canvas 2D context
 	const size = 24;
-	
-	const bgm = document.getElementById("bgm");
 	const bgmVol = 0.2;
 	
-	const win = document.getElementById("win");
-	const walk = document.getElementById("walk");
+	await overworldSoundPromise;
+	await mapSoundPromise;
 	
-	bgm.volume = bgmVol;
-	bgm.play();
-
+	document.getElementById('startScreen').style.display = 'none';
+	
+	loadSound('win', 'Sound Effects/021.ogg');
+	loadSound('walk', 'Sound Effects/044.ogg');
+	loadSound('silence', 'Sound Effects/137.ogg');
+	
+	let silenceSound;
+	
+	musicGain.gain.value = bgmVol;
+	
 	const spritesheets = {
 		characters: new Image(),
 		statics: new Image(),
 		tiles: new Image(),
-		text: new Image()
+		text: new Image(),
+		others: new Image(),
+		map: new Image()
 	};
 
 	spritesheets.characters.src = "Spritesheets/Characters.png";
 	spritesheets.statics.src = "Spritesheets/Statics.png";
 	spritesheets.tiles.src = "Spritesheets/Tiles.png";
 	spritesheets.text.src = "Spritesheets/Text.png";
+	spritesheets.others.src = "Spritesheets/Others.png";
+	spritesheets.map.src = "Spritesheets/Map.png";
 
 	//AssetPosition types: 0 = Nouns, 1 = Operators, 2 = Properties, 3 = Particles
 	const assetPositions = {
@@ -60,6 +122,14 @@ document.getElementById('startBtn').addEventListener('click', () => {
 		"ROCK":		{sheet: spritesheets.statics,		col: 151,	row: 601,	color: [32, 30, 31],	type: 0},
 		"FLAG":		{sheet: spritesheets.statics,		col: 26,	row: 226,	color: [14, 32, 14],	type: 0},
 		"TILE":		{sheet: spritesheets.statics,		col: 151,	row: 751,	color: [0, 6, 1],		type: 0},
+		"LEVEL":	{sheet: spritesheets.statics,		col: 851,	row: 826,	color: [3, 20, 21],		type: 0},
+		"GATE":		{sheet: spritesheets.statics,		col: 851,	row: 226,	color: [12, 11, 12],	type: 0},
+		"ROCKET":	{sheet: spritesheets.others,		col: 51,	row: 847,	color: [2, 6, 1],		type: 0},
+		"HUSKS":	{sheet: spritesheets.statics,		col: 651,	row: 301,	color: [31, 30, 31],	type: 0},
+		"FUNGI":	{sheet: spritesheets.statics,		col: 526,	row: 226,	color: [31, 30, 32],	type: 0},
+		"TREES":	{sheet: spritesheets.statics,		col: 526,	row: 751,	color: [27, 26, 27],	type: 0},
+		"FLOWER":	{sheet: spritesheets.statics,		col: 151,	row: 226,	color: [18, 17, 18],	type: 0},
+		"LINE":		{sheet: spritesheets.tiles,			col: 26,	row: 976,	color: [3, 2, 3],		type: 0},
 		"IS":		{sheet: spritesheets.text,			col: 251,	row: 76,	color: [3, 1, 3],		type: 1},
 		"YOU":		{sheet: spritesheets.text,			col: 251,	row: 226,	color: [3, 20, 21],		type: 2},
 		"WIN":		{sheet: spritesheets.text,			col: 251,	row: 1123,	color: [14, 32, 14],	type: 2},
@@ -78,10 +148,53 @@ document.getElementById('startBtn').addEventListener('click', () => {
 	}
 
 	let currentLevel = "Baba Is You";
+	let gameProgress = 0;
+	let lastGameProgress = gameProgress;
+	
+	function Music() {
+		if (currentLevel === "Map") {
+			playMusic('Map');
+		} else {
+			playMusic('Overworld');
+		}
+	}
 
 	const levelData = {
-		"Map": {width: 33, height: 18, objects: []},
-		"Baba Is You": {width: 33, height: 18, objects: [
+		"Map":	{width: 33, height: 18, objects: [
+		{ type: "LEVEL",  x: 27, y: 16, color: 21, icon: "DOT"},
+		{ type: "LEVEL",  x: 16, y: 14, color: 8,  icon: "DOT"},
+		{ type: "LEVEL",  x: 16, y: 10, color: 8,  icon: ""},
+		{ type: "LEVEL",  x: 18, y: 9,  color: 16, icon: ""},
+		{ type: "LEVEL",  x: 21, y: 13, color: 16, icon: ""},
+		{ type: "LEVEL",  x: 21, y: 13, color: 31, icon: ""},
+		{ type: "LEVEL",  x: 18, y: 6,  color: 32, icon: ""},
+		{ type: "LEVEL",  x: 21, y: 6,  color: 27, icon: ""},
+		{ type: "LEVEL",  x: 24, y: 10, color: 1,  icon: ""},
+		{ type: "LEVEL",  x: 20, y: 4,  color: 6,  icon: ""},
+		{ type: "LEVEL",  x: 13, y: 8,  color: 20, icon: ""},
+		{ type: "LEVEL",  x: 11, y: 5,  color: 10, icon: ""},
+		{ type: "LEVEL",  x: 10, y: 3,  color: 9,  icon: ""},
+		{ type: "LEVEL",  x: 10, y: 16, color: 6,  icon: "00"},
+		{ type: "GATE",   x: 16, y: 4  },
+		{ type: "ROCKET", x: 20, y: 3  },
+		{ type: "HUSKS",  x: 18, y: 13 },
+		{ type: "HUSKS",  x: 20, y: 13 },
+		{ type: "HUSKS",  x: 22, y: 12 },
+		{ type: "HUSKS",  x: 23, y: 11 },
+		{ type: "TREES",  x: 21, y: 7  },
+		{ type: "TREES",  x: 22, y: 6  },
+		{ type: "TREES",  x: 21, y: 5  },
+		{ type: "TREES",  x: 17, y: 5  },
+		{ type: "FUNGI",  x: 15, y: 5  },
+		{ type: "FUNGI",  x: 16, y: 7  },
+		{ type: "FUNGI",  x: 17, y: 6  },
+		{ type: "FUNGI",  x: 18, y: 5  },
+		{ type: "FUNGI",  x: 20, y: 6  },
+		{ type: "FLOWER", x: 15, y: 7  },
+		{ type: "FLOWER", x: 13, y: 9  },
+		{ type: "FLOWER", x: 12, y: 8  }
+	]},
+		"Baba Is You":	{width: 33, height: 18, objects: [
 		{ type: "TILE", x: 12, y: 10 },
 		{ type: "TILE", x: 13, y: 10 },
 		{ type: "TILE", x: 14, y: 10 },
@@ -152,6 +265,14 @@ document.getElementById('startBtn').addEventListener('click', () => {
 	]}
 		// ...add more as needed
 	};
+	
+	mapUpdates = {
+		0: [
+		{ type: "LEVEL", x: 11, y: 14, color: 6, icon: "01" },
+		{ type: "LINE",  x: 11, y: 15 },
+		{ type: "LINE",  x: 11, y: 16 }
+		]
+	}
 
 	// Colors are taken in top-to-bottom, left-to-right order from spritesheetColors.png
 	const palette = [
@@ -195,10 +316,16 @@ document.getElementById('startBtn').addEventListener('click', () => {
 	let gameObjects;
 
 	function initialize() {
+		Music();
+		
 		gameObjects = [];
 		
 		levelData[currentLevel].objects.forEach((obj) => {
-		 gameObjects.push({type: obj.type, x: obj.x, y: obj.y})
+			if (obj.type === "LEVEL") {
+				gameObjects.push({type: obj.type, x: obj.x, y: obj.y, color: obj.color, icon: obj.icon})
+			} else {
+				gameObjects.push({type: obj.type, x: obj.x, y: obj.y})
+			}
 		})
 
 		gameObjects.forEach((obj) => {
@@ -354,16 +481,16 @@ document.getElementById('startBtn').addEventListener('click', () => {
 		gameObjects.forEach((obj) => {
 			if (assetPositions[obj.type].sheet === spritesheets.tiles) {
 				obj.state = 0
-				if (gameObjects.some((oth) => (obj.x === levelData[currentLevel].width || (!oth.text && oth.type === obj.type && oth.x === obj.x + 1 && oth.y === obj.y)))) {
+				if (gameObjects.some((oth) => (obj.x === levelData[currentLevel].width || (!oth.text && (oth.type === obj.type || oth.type === "LEVEL") && oth.x === obj.x + 1 && oth.y === obj.y)))) {
 					obj.state += 1
 				}
-				if (gameObjects.some((oth) => (obj.y === 1 || (!oth.text && oth.type === obj.type && oth.y === obj.y - 1 && oth.x === obj.x)))) {
+				if (gameObjects.some((oth) => (obj.y === 1 || (!oth.text && (oth.type === obj.type || oth.type === "LEVEL") && oth.y === obj.y - 1 && oth.x === obj.x)))) {
 					obj.state += 2
 				}
-				if (gameObjects.some((oth) => (obj.x === 1 || (!oth.text && oth.type === obj.type && oth.x === obj.x - 1 && oth.y === obj.y)))) {
+				if (gameObjects.some((oth) => (obj.x === 1 || (!oth.text && (oth.type === obj.type || oth.type === "LEVEL") && oth.x === obj.x - 1 && oth.y === obj.y)))) {
 					obj.state += 4
 				}
-				if (gameObjects.some((oth) => (obj.y === levelData[currentLevel].height || (!oth.text && oth.type === obj.type && oth.y === obj.y + 1 && oth.x === obj.x)))) {
+				if (gameObjects.some((oth) => (obj.y === levelData[currentLevel].height || (!oth.text && (oth.type === obj.type || oth.type === "LEVEL") && oth.y === obj.y + 1 && oth.x === obj.x)))) {
 					obj.state += 8
 				}
 			} else if (assetPositions[obj.type].sheet === spritesheets.characters) {
@@ -377,9 +504,9 @@ document.getElementById('startBtn').addEventListener('click', () => {
 			if (gameObjects.some((win) => (eqs[you.type].includes("WIN") || win.x === you.x && win.y === you.y && is(win, "WIN")))) {
 				for (let i = 0; i < 9; i++) {you.particles.push({type: "ring", x: you.x, y: you.y, dirbypi: 2*Math.random(), time: 1800 + 100 * Math.floor(3*Math.random()), speed: 4 + Math.random(), created: t});}
 				levelComplete = true;
-				win.play();
 			}
 		});
+		if (levelComplete) {playSFX('win');}
 	}
 
 	// e.g. is("BABA", "YOU")
@@ -438,8 +565,20 @@ document.getElementById('startBtn').addEventListener('click', () => {
 	}
 
 	function drawScene() {
-		ctx.fillStyle = "#080808";
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		if (currentLevel === "Map") {
+			const xLocation = 31;
+			const yLocation = 496;
+			const frameDiff = 854
+			ctx.drawImage(
+				spritesheets.map,
+				xLocation + frameDiff*(animationFrame % 3), yLocation, levelData[currentLevel].width*size, levelData[currentLevel].height*size,
+				0, 0,
+				canvas.width, canvas.height
+			);
+		} else {
+			ctx.fillStyle = "#080808";
+			ctx.fillRect(0, 0, canvas.width, canvas.height);
+		}
 		
 		let realProg = 1;
 		if (animatingS) {
@@ -455,7 +594,32 @@ document.getElementById('startBtn').addEventListener('click', () => {
 				(obj.y * realProg) + (obj.lasty * (1 - realProg)),
 				(animationFrame + obj.frameSeed) % 3,
 				obj.text ? -1 : obj.state,
-				palette[assetPositions[obj.type].color[obj.text + obj.active]]);
+				obj.type === "LEVEL" ? palette[obj.color] : palette[assetPositions[obj.type].color[obj.text + obj.active]]);
+			if (obj.type === "LEVEL") {
+				const unitX = canvas.width / levelData[currentLevel].width
+				const unitY = canvas.height / levelData[currentLevel].height
+				if (obj.icon === "DOT") {
+					ctx.drawImage(
+						spritesheets.statics,
+						851, 960, size, size,
+						(obj.x - 1) * unitX, (obj.y - 1) * unitY,
+						unitX, unitY
+					);
+				} else if (!(obj.icon === "")){
+					ctx.drawImage(
+						spritesheets.statics,
+						773 + parseInt(obj.icon[0]) * 8, 1035, 7, 16,
+						(obj.x - 1 + 5/size) * unitX, (obj.y - 1 + 4/size) * unitY,
+						7 * (unitX / size), 16 * (unitY / size)
+					);
+					ctx.drawImage(
+						spritesheets.statics,
+						773 + parseInt(obj.icon[1]) * 8, 1035, 7, 16,
+						(obj.x - 1 + 13/size) * unitX, (obj.y - 1 + 4/size) * unitY,
+						7 * (unitX / size), 16 * (unitY / size)
+					);
+				}
+			}
 			
 			obj.particles.filter((part) => (t - part.created >= part.time)).forEach((part) => {obj.particles.splice(obj.particles.indexOf(part), 1);})
 			obj.particles.forEach((part) => {
@@ -483,27 +647,30 @@ document.getElementById('startBtn').addEventListener('click', () => {
 					true);
 			})
 		}
-		bgm.volume = ((+you * realProg) + (+lastyou * (1 - realProg))) * bgmVol;
+		musicGain.gain.value = ((+you * realProg) + (+lastyou * (1 - realProg))) * bgmVol;
 	}
 
 	let animationStarted = false;
 	// Function to resize canvas to window size
-	function resizeCanvas() {
+	function resizeCanvas(draw = true) {
 		marginSize = 88
 		aspectRatio = levelData[currentLevel].width / levelData[currentLevel].height
 		canvas.height = ((window.innerHeight - marginSize) * aspectRatio > window.innerWidth - marginSize) ? (window.innerWidth - marginSize) / aspectRatio: window.innerHeight - marginSize;
 		canvas.width = canvas.height * aspectRatio;
-		if (window.innerHeight < marginSize)
+		if (window.innerHeight < marginSize) {
 			canvas.height = ((window.innerHeight) * aspectRatio > window.innerWidth) ? (window.innerWidth) / aspectRatio: window.innerHeight;
 			canvas.width = canvas.height * aspectRatio;
-		loadSpritesheets(() => {
-			ctx.imageSmoothingEnabled = false;
-			drawScene();
-			if (!animationStarted) {
-				animationStarted = true;
-				requestAnimationFrame(animate);
-			}
-		});
+		}
+		if (draw) {
+			loadSpritesheets(() => {
+				ctx.imageSmoothingEnabled = false;
+				drawScene();
+				if (!animationStarted) {
+					animationStarted = true;
+					requestAnimationFrame(animate);
+				}
+			});
+		}
 	}
 
 	const animationSpeed = 150; // ms per frame
@@ -527,10 +694,17 @@ document.getElementById('startBtn').addEventListener('click', () => {
 	const phase1Duration = 2000;
 	const phase2Duration = 1000;
 	
+	const buildingLevelDelay = 1500;
+	const buildingLevelSpeed = 150;
+	let buildingLevel = false;
+	let buildingLevelWait = buildingLevelDelay;
+	let buildingLevelTime = 0;
+	
 	let you = true;
 	let lastyou = true;
 
 	function animate(time) {
+		if (lastLevelComplete && !levelComplete) {resizeCanvas(false);}
 		sparkle = false;
 		if (time - lastSparkleTime > sparkleTime) {
 			lastSparkleTime = time;
@@ -549,6 +723,28 @@ document.getElementById('startBtn').addEventListener('click', () => {
 			levelTransitionTime = time;
 		}
 		
+		if (gameProgress != lastGameProgress) {
+			lastGameProgress = gameProgress;
+			buildingLevel = true;
+			buildingLevelTime = time;
+		}
+		
+		if (buildingLevel) {
+			if (time > buildingLevelTime + buildingLevelWait) {
+				buildingLevelTime = time;
+				build = mapUpdates[gameProgress].pop();
+				if (build.type === "LEVEL") {
+					gameObjects.push({ type: build.type, x: build.x, y: build.y, text: false, active: false, dir: 0, state: 0, frameSeed: Math.floor(Math.random() * 3), lastx: build.x, lasty: build.y, hist: new Array(moves).fill(0), particles: [], color: build.color, icon: build.icon});
+				} else {
+					gameObjects.push({ type: build.type, x: build.x, y: build.y, text: false, active: false, dir: 0, state: 0, frameSeed: Math.floor(Math.random() * 3), lastx: build.x, lasty: build.y, hist: new Array(moves).fill(0), particles: []});
+				}
+				connectTiles();
+				buildingLevelWait = buildingLevelSpeed;
+				if (mapUpdates[gameProgress].length === 0) {buildingLevel = false; buildingLevelWait = buildingLevelDelay;}
+			}
+		}
+		
+		
 		if (animatingS) {
 			if (time - lastFrameTimeS > animationSpeedS) {
 				animatingS = false;
@@ -560,6 +756,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
 		t = time;
 		
 		drawScene();
+		lastLevelComplete = levelComplete
 		if (transitioning) {
 			levelTransitionProg = time - levelTransitionTime;
 			if (levelComplete) {levelTransitionProg -= phase1Duration;}
@@ -567,7 +764,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
 			if (realProg >= 0) {
 				let next = false;
 				if (realProg > 1) {
-					if (levelComplete) {next = true; realProg = 1; bgm.volume = 0;} else {transitioning = false; bgm.volume = bgmVol; requestAnimationFrame(animate); return;}
+					if (levelComplete) {next = true; realProg = 1; musicGain.gain.value = 0;} else {transitioning = false; musicGain.gain.value = bgmVol; requestAnimationFrame(animate); return;}
 				}
 			
 				const width = levelData[currentLevel].width;
@@ -586,7 +783,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
 				
 				if (!levelComplete) {realProg = 1 - realProg;}
 				
-				bgm.volume = (1 - realProg) * bgmVol;
+				musicGain.gain.value = (1 - realProg) * bgmVol;
 				
 				ctx.save();
 				ctx.beginPath();
@@ -619,6 +816,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
 				}
 				if (next) {
 					currentLevel = "Map";
+					lastGameProgress++;
 					levelComplete = false; 
 					levelTransitionTime = time;
 					moves = 0;
@@ -633,6 +831,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
 	}
 
 	let levelComplete = false;
+	let lastLevelComplete = false;
 	let moves = 0;
 
 	parseText();
@@ -684,7 +883,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
 					case 'ArrowDown':	{obj.dir = 3;} break;
 				}
 				if (canMove) {
-					walk.play();
+					playSFX('walk', 2);
 					pushObjs.forEach((pushObj) => {
 						pushObj.particles.push({type: "dust", x: pushObj.x, y: pushObj.y, dirbypi: (1 + (obj.dir * 0.5) % 2), time: 900, speed: 0.5, created: t});
 						switch(event.key) {
@@ -725,7 +924,12 @@ document.getElementById('startBtn').addEventListener('click', () => {
 		parseText();
 		connectTiles();
 		checkWin();
-		you = gameObjects.some((obj) => (is(obj, "YOU")));
+		you = gameObjects.some((obj) => (is(obj, "YOU"))) || currentLevel === "Map";
+		if (!you && lastyou) {
+			silenceSound = playSFX('silence', 0.5, true);
+		} else if (you && !lastyou && silenceSound) {
+			silenceSound.stop();
+		}
 	});
 });
 </script>
