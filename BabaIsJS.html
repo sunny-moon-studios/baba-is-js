@@ -276,6 +276,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 	let nextLevel = "";
 	let gameProgress = saveProgress["gameProgress"];
 	let newLevel = true;
+	let levelReady = false;
 	let exit = true;
 	
 	const worldColors = {"Map":["#080808","#15181f"],"The Lake":["#0e152c","#252c46"],"Solitary Island":["#150d0d","#281a1a"]}
@@ -426,6 +427,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 	const subtleWorlds = {"Float": "Map"};
 
 	function initialize() {
+		levelReady = false;
 		if (currentLevel in subtleWorlds) {
 			bgColor = worldColors[subtleWorlds[currentLevel]][0];
 			document.body.style.backgroundColor = worldColors[subtleWorlds[currentLevel]][1];
@@ -497,6 +499,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 			connectTiles();
 			// Initial resize
 			resizeCanvas();
+			levelReady = true;
 		})
 	}
 
@@ -1017,11 +1020,11 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 			}
 		}
 		
-		if (newLevel && Worlds.includes(currentLevel)) {
+		if (newLevel && levelReady && Worlds.includes(currentLevel)) {
 			newLevel = false;
 			while (buildLocs.length > 0) {
-				buildLocs.forEach((loc) => {if (currentWorld != "Map" || loc.x != 15 || loc.y != 14) {revealed.push({x: loc.x, y: loc.y});}})
-				let buildingLocs = buildLocs;
+				buildLocs.filter((loc) => loc && typeof loc.x === "number" && typeof loc.y === "number").forEach((loc) => {if (currentWorld != "Map" || loc.x != 15 || loc.y != 14) {revealed.push({x: loc.x, y: loc.y});}})
+				let buildingLocs = buildLocs.filter((loc) => loc && typeof loc.x === "number" && typeof loc.y === "number");
 				buildLocs = [];
 				buildingLocs.forEach((loc) => {
 					modifyMap(loc.x, loc.y);
@@ -1029,16 +1032,24 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 				connectTiles();
 			}
 			lastLevelCoords = gameObjects.find((obj) => (obj.type === "LEVEL" && obj.name === lastLevel));
-			buildLocs = [{x: lastLevelCoords.x, y: lastLevelCoords.y}]
-			buildingLevel = true;
-			buildingLevelTime = time;
-			
-			let cursor = gameObjects.find((obj) => (obj.type === "CURSOR"));
-			let level = gameObjects.find((obj) => (obj.type === "LEVEL" && obj.name === lastLevel));
-			if (cursor && level) {
-				cursor.x = level.x;
-				cursor.y = level.y;
-				document.getElementById('header').innerHTML = (level.name in worldNumbers ? (Object.keys(worldNumbers).indexOf(level.name) + 1) + ". " : "") + level.name;
+			if (!lastLevelCoords || typeof lastLevelCoords.x !== "number" || typeof lastLevelCoords.y !== "number") {
+				console.log("gunky");
+				// UPDATE BEFORE COMMITING
+				buildLocs = [];
+				buildingLevel = false;
+				buildingLevelWait = buildingLevelDelay;
+			} else {
+				buildLocs = [{x: lastLevelCoords.x, y: lastLevelCoords.y}]
+				buildingLevel = true;
+				buildingLevelTime = time;
+				
+				let cursor = gameObjects.find((obj) => (obj.type === "CURSOR"));
+				let level = gameObjects.find((obj) => (obj.type === "LEVEL" && obj.name === lastLevel));
+				if (cursor && level) {
+					cursor.x = level.x;
+					cursor.y = level.y;
+					document.getElementById('header').innerHTML = (level.name in worldNumbers ? (Object.keys(worldNumbers).indexOf(level.name) + 1) + ". " : "") + level.name;
+				}
 			}
 		}
 		
@@ -1060,13 +1071,12 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 		}
 		
 		if (buildingLevel) {
-			if (time > buildingLevelTime + buildingLevelWait) {		
-				buildLocs.forEach((loc) => {if (currentWorld != "Map" || loc.x != 15 || loc.y != 14) {revealed.push({x: loc.x, y: loc.y});}})
+			if (time > buildingLevelTime + buildingLevelWait) {
+				buildLocs.filter((loc) => loc && typeof loc.x === "number" && typeof loc.y === "number").forEach((loc) => {if (currentWorld != "Map" || loc.x != 15 || loc.y != 14) {revealed.push({x: loc.x, y: loc.y});}})
 				buildingLevelTime = time;
-				let buildingLocs = buildLocs;
+				let buildingLocs = buildLocs.filter((loc) => loc && typeof loc.x === "number" && typeof loc.y === "number");
 				buildLocs = [];
 				buildingLocs.forEach((loc) => {
-					
 					modifyMap(loc.x, loc.y, true);
 				});
 				connectTiles();
