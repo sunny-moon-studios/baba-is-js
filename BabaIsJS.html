@@ -4,7 +4,7 @@
 	<title>Baba Is JS</title>
 	<link rel="icon" type="image/x-icon" href="favicon.ico">
 	<style>
-	html, body {
+	html, body { /* This is for making the game screen fit */
 		height: 100%;
 		margin: 0;
 	}
@@ -16,7 +16,7 @@
 		justify-content: center;
 	}
 	
-	#header {
+	#header { /* For displaying names of levels */
 		position: absolute;
 		top: 0;
 		left: 56px;
@@ -32,7 +32,7 @@
 		z-index: 10;
 	}
 	
-	#progress {
+	#progress { /* For displaying world progress */
 		position: absolute;
 		top: 0;
 		right: 56px;
@@ -68,18 +68,19 @@
 <div id="progress"></div>
 <canvas id="game"></canvas>
 <div id="startScreen">
-  <button id="startBtn">Start Game</button>
+  <button id="startBtn">Start Game</button> <!-- This is the start button. -->
 </div>
 <script>
+// Welcome to the JavaScript part of the code.
+
+// Save system
 let saveProgress = {"currentWorld":"Map","currentLevel":"Baba Is You","lastLevel":"Baba Is You","gameProgress":[],"worldProgress":{}};
-//let saveProgress = {"currentWorld":"The Lake","currentLevel":"The Lake","lastLevel":"Affection","gameProgress":["Icy Waters","Turns","Affection","Pillar Yard","Brick Wall","Lock","Novice Locksmith","Locked In","Changeless","Two Doors","Burglary","Jelly Throne","Crab Storage"],"worldProgress":{"Map":["Baba Is You","Where Do I Go?","Now What Is This?","Still Out Of Reach","Grass Yard","Out Of Reach","Off Limits","Volcano"]}}
-//localStorage.setItem('save', JSON.stringify(saveProgress));
 const loadedString = localStorage.getItem('save');
 if (loadedString) {
     saveProgress = JSON.parse(loadedString);
-    // Now restore state from saveData
 }
 
+// Audio context
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 const musicGain = audioCtx.createGain();    // For background music
@@ -99,7 +100,7 @@ function loadSound(name, url) {
 		.then(buffer => {soundBuffers[name] = buffer;})
 }
 
-// Play a sound by name
+// Play music by name
 function playMusic(name) {
 	// Stop previous music if playing
     if (musicSource) {
@@ -132,31 +133,38 @@ function playSFX(name, volume = 1.0, loop = false) {
 	return sfxSource;
 }
 
+// Load the current world music and the map music
 const overworldSoundPromise = loadSound('Overworld', 'Music/' + saveProgress["currentWorld"] + '.ogg');
 const mapSoundPromise = loadSound('Map', 'Music/On the island.ogg');
 
-// Loads a JSON level file by name (without .json extension)
+// Load a JSON level file by name (without .json extension)
 async function loadLevel(levelName) {
+	// This line is for levels whose names have question marks.
+	// Since JSON filenames cannot have question marks, we replace them with 'Q'. 
 	if (levelName[levelName.length - 1] === "?") {levelName = levelName.slice(0, -1) + "Q"}
 	const response = await fetch(`Levels/${levelName}.json`);
 	const levelData = await response.json();
 	return levelData;
 }
 
+// The entire game starts when the start button is clicked.
 document.getElementById('startBtn').addEventListener('click', async () => {	
 	document.getElementById('startScreen').innerHTML = 'Loading...';
 	
-	const canvas = document.getElementById('game');
-	const ctx = canvas.getContext('2d'); // Your canvas 2D context
-	const size = 24;
-	const cursorSize = 32;
-	const bgmVol = 0.2;
+	const canvas = document.getElementById('game'); // The canvas on which the game is drawn.
+	const ctx = canvas.getContext('2d');
+	const size = 24; // Size, in pixels, of most game sprites
+	const cursorSize = 32; // Size, in pixels, of the cursor sprite
+	const bgmVol = 0.2; // Background music volume (1 sounds diabolical)
 	
 	await overworldSoundPromise;
 	await mapSoundPromise;
 	
+	// Once the sounds are loaded, get rid of the 'Loading...'
 	document.getElementById('startScreen').style.display = 'none';
 	
+	// Load all these sound effects
+	// TODO: Some sound effects have variants. Also load these.
 	loadSound('defeat', 'Sound Effects/006.ogg');
 	loadSound('win', 'Sound Effects/021.ogg');
 	loadSound('unlock', 'Sound Effects/031.ogg');
@@ -167,7 +175,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 	loadSound('area complete', 'Sound Effects/130.ogg');
 	loadSound('area clear', 'Sound Effects/131.ogg');
 	
-	musicGain.gain.value = bgmVol;
+	musicGain.gain.value = bgmVol; // Set background music volume
 	
 	const spritesheets = {
 		characters: new Image(),
@@ -178,6 +186,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 		map: new Image()
 	};
 
+	// Load all the spritesheets
 	spritesheets.characters.src = "Spritesheets/Characters.png";
 	spritesheets.statics.src = "Spritesheets/Statics.png";
 	spritesheets.tiles.src = "Spritesheets/Tiles.png";
@@ -185,7 +194,29 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 	spritesheets.others.src = "Spritesheets/Others.png";
 	spritesheets.map.src = "Spritesheets/Map.png";
 
-	//AssetPosition types: 0 = Nouns, 1 = Operators, 2 = Properties, 3 = Particles
+	/*
+	We make a dictionary of all the objects in the entire game.
+	
+	Each object has a name, that needs to be capitalized by convention.
+	
+	We find the location of the sprites of each object. This location is given by three variables:
+	 		* sheet: the spritesheet in which this object is present
+			* col: the x-position, or the column, of the top-leftmost pixel of the sprite
+			* row: ditto, but the y-position, or the row 
+	
+	We also need to give each sprite a color. This is given as a list of 3 numbers that respectively represent:
+			* The color of the object itself
+			* The color of the text assigned to this object, when it is inactive (not part of an ingame rule)
+			* The color of the text assigned to this object, when it is active
+	
+	All colors can be found in the spritesheet Text.png.
+	Colors are numbered Mongolian-style, i.e, left-to-right, top-to-bottom, starting from 0 and ending at 34.
+	Finally, we have the types: 0 = Nouns, 1 = Operators, 2 = Properties, 3 = Particles
+
+	Should we make this object into a seperate JSON file? I am not sure.
+	Pros: We need the same object in level editor. Also, this will make the compling faster.
+	Cons: Too hard 
+	*/
 	const assetPositions = {
 		"BABA":		{sheet: spritesheets.characters,	col: 26,	row: 1,		color: [3, 20, 21],		type: 0},
 		"WALL":		{sheet: spritesheets.tiles,			col: 26,	row: 1501,	color: [6, 6, 1],		type: 0},
@@ -252,6 +283,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 		// ...add more as needed
 	};
 	
+	// This is a list of animated objects, whose sprites are in Others.png
 	const animatedSprites = ["BUBBLE", "COG"];
 	
 	const levelIcons = {"JELLY": 0, "ISLAND": 1, "DOT": 14, "ONE": 25, "TWO": 26};
