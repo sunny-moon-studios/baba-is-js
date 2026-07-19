@@ -105,8 +105,8 @@ const assetPositions = {
 
 const levelIcons = {"JELLY": 0, "DOT": 14};
 
-let levelWidth = parseInt(prompt("Breedte?"));
-let levelHeight = parseInt(prompt("Hoogte?"));
+let levelWidth = parseInt(prompt("Width of level?"));
+let levelHeight = parseInt(prompt("Height of level?"));
 
 let bgColor = "#080808";
 
@@ -475,8 +475,8 @@ window.addEventListener('keydown', function(event) {
 			case 'ArrowDown':	{dir = 3;} break;
 			case 'Space':		{let newObj = gameObjects.push({ type: type, x: cursorX, y: cursorY, text: text, active: text, dir: dir, state: state, frameSeed: Math.floor(Math.random() * 3), color: lvlColor, icon: lvlIcon, name: lvlName});} break;
 			case 'KeyT':		{text = !text;} break;
-			case 'KeyN':		{type = prompt("Wat voor object wilt u?").toUpperCase(); if (type === "LEVEL") {lvlColor = prompt("Je hebt \"LEVEL\" gekozen, welke kleurnummer moet het hebben?"); lvlIcon = prompt("En wat zou zijn icoon zijn?").toUpperCase(); lvlName = prompt("En zijn naam?")}} break;
-			case 'KeyB':		{let worldColor = prompt("Welke kleurschema wilt u?"); if (worldColor in worldColors) { bgColor = worldColors[worldColor][0]; document.body.style.backgroundColor = worldColors[worldColor][1]; palette = palettes[worldColor];} } break;
+			case 'KeyN':		{type = prompt("What kind of object do you want?").toUpperCase(); if (type === "LEVEL") {lvlColor = prompt("You chose \"LEVEL\", which colour number do you want?"); lvlIcon = prompt("And what will your icon be?").toUpperCase(); lvlName = prompt("And the name?")}} break;
+			case 'KeyB':		{let worldColor = prompt("Which colour scheme do you want?"); if (worldColor in worldColors) { bgColor = worldColors[worldColor][0]; document.body.style.backgroundColor = worldColors[worldColor][1]; palette = palettes[worldColor];} } break;
 			case 'KeyZ':		{gameObjects.pop();} break;
 			case 'KeyP':		{
 				let json = "{\"width\":" + levelWidth + ",\"height\":" + levelHeight + ",\"objects\":[";
@@ -504,7 +504,7 @@ window.addEventListener('keydown', function(event) {
 
 				const a = document.createElement('a');
 				a.href = url;
-				a.download = prompt("Wat zou de naam van je LEVEL zijn?") + '.json';
+				a.download = prompt("What will the name of your level be?") + '.json';
 				a.click();
 
 				URL.revokeObjectURL(url); // Clean up
