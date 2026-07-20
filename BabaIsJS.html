@@ -775,6 +775,14 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 				(x - 1 + xshift) * unitX, (y - 1 + yshift) * unitY,
 				unitX * (particleData[assetName].size / size), unitY * (particleData[assetName].size / size)
 			);
+			if (assetName == "dust") {			
+				ctx.drawImage(
+					colorized,
+					0, 0, particleData[assetName].size, particleData[assetName].size,
+					0, 0,
+					unitX * (particleData[assetName].size / size), unitY * (particleData[assetName].size / size)
+				);
+			}
 		} else {
 			if (assetName === "CURSOR") {
 				ctx.drawImage(
@@ -857,6 +865,35 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 		}
 		
 		// Draw each game object and particle
+		particles.filter((part) => (t - part.created >= part.time)).forEach((part) => {particles.splice(particles.indexOf(part), 1);})
+		particles.forEach((part) => {
+			let speed = part.speed;
+			let partProg = (t - part.created) / part.time
+			let partState; 
+			if (particleData[part.type].smooth) {
+				const partAnimationSpeed = 100
+				partState = part.time/partAnimationSpeed - Math.floor((part.time/partAnimationSpeed + 1)*partProg);
+				if (partState > 3) {
+					partState = 4 + ((partState - 3) % 3)
+				}
+				partProg = 1 - (1 - partProg) * (1 - partProg);
+			} else {
+				partState = 5 - Math.floor(6*partProg);
+				if (part.type === "drops") {
+					partState = 3 - Math.floor(4*partProg);
+				}
+			}
+			
+			drawAsset(
+				ctx, part.type,
+				part.x + partProg * speed * (Math.cos(Math.PI*part.dirbypi)) + part.xshift,
+				part.y - partProg * speed * (Math.sin(Math.PI*part.dirbypi)) + part.yshift,
+				0, 
+				partState,
+				palette[part.color],
+				true);
+			})
+		}
 		for (const obj of gameObjects) {
 			if (obj.type != "LEVEL" || (obj.type === "LEVEL" && obj.levelState > 0)) {
 				const cursor = obj.type === "CURSOR";
@@ -897,35 +934,6 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 				}
 			}
 		}
-		particles.filter((part) => (t - part.created >= part.time)).forEach((part) => {particles.splice(particles.indexOf(part), 1);})
-		particles.forEach((part) => {
-			let speed = part.speed;
-			let partProg = (t - part.created) / part.time
-			let partState; 
-			if (particleData[part.type].smooth) {
-				const partAnimationSpeed = 100
-				partState = part.time/partAnimationSpeed - Math.floor((part.time/partAnimationSpeed + 1)*partProg);
-				if (partState > 3) {
-					partState = 4 + ((partState - 3) % 3)
-				}
-				partProg = 1 - (1 - partProg) * (1 - partProg);
-			} else {
-				partState = 5 - Math.floor(6*partProg);
-				if (part.type === "drops") {
-					partState = 3 - Math.floor(4*partProg);
-				}
-			}
-			
-			drawAsset(
-				ctx, part.type,
-				part.x + partProg * speed * (Math.cos(Math.PI*part.dirbypi)) + part.xshift,
-				part.y - partProg * speed * (Math.sin(Math.PI*part.dirbypi)) + part.yshift,
-				0, 
-				partState,
-				palette[part.color],
-				true);
-		})
-	}
 
 	let animationStarted = false;
 	// Function to resize canvas to window size
@@ -1060,11 +1068,11 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 			sparkle = true;
 		}
 		if (!levelComplete) {
-			//let hots = gameObjects.filter((obj) => (is(obj, "HOT")));
-			//if (hots.length > 0) {
-			//	let steaming = hots[Math.floor(Math.random() * hots.length)];
-			//	particles.push({type: "steam", x: steaming.x, y: steaming.y, dirbypi: 2*Math.random(), time: 900, speed: 1.5, created: t, color: 1});
-			//}
+			let hots = gameObjects.filter((obj) => (is(obj, "HOT")));
+			if (hots.length > 0) {
+				let steaming = hots[Math.floor(Math.random() * hots.length)];
+				particles.push({type: "steam", x: steaming.x, y: steaming.y, dirbypi: 2*Math.random(), time: 900, speed: 1.5, created: t, color: 1});
+			}
 			if (sparkle) {
 				gameObjects.filter((obj) => (is(obj, "WIN"))).forEach((obj) => {particles.push({type: "sparkle", x: obj.x, y: obj.y, dirbypi: 2*Math.random(), time: 900, speed: 1.5, created: t, color: 14, xshift: Math.random() - 0.5, yshift: Math.random() - 0.5});});
 			}
@@ -1425,7 +1433,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
             if (melt.length > 0) {
                 melt.forEach((melt) => { if (!moribund.includes(melt)) { moribund.push(melt) } });
 				defeat = true;
-				for (let i = 0; i < 12; i++) { particles.push({ type: "drops", x: hot.x, y: hot.y, dirbypi: 2 * Math.random(), time: 450, speed: 1, created: t, color: 13, xshift: Math.random() - 0.5, yshift: Math.random() - 0.5}); }
+				for (let i = 0; i < 12; i++) { particles.push({ type: "drops", x: hot.x, y: hot.y, dirbypi: 2 * Math.random(), time: 450, speed: 1, created: t, color: hot.color, xshift: Math.random() - 0.5, yshift: Math.random() - 0.5}); }
             }
         });
 		
