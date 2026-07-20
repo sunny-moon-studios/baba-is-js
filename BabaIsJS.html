@@ -280,14 +280,22 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 		"RED":		{sheet: spritesheets.text,			col: 176,	row: 1498,	color: [12, 11, 12],	type: 2},
 		"BLUE":		{sheet: spritesheets.text,			col: 251,	row: 1573,	color: [17, 17, 18],	type: 2},
 		"FLOAT":	{sheet: spritesheets.text,			col: 251,	row: 805,	color: [9, 7, 9],		type: 2},
-		// ...add more as needed
+		// ...more to be added
 	};
 	
-	// This is a list of animated objects, whose sprites are in Others.png
+	// List of animated objects, whose sprites are in Others.png
 	const animatedSprites = ["BUBBLE", "COG"];
-	
+
+	// List of level icons, whose sprites are in Statics.png. Numbering is done left-to-right, top-to-bottom.
 	const levelIcons = {"JELLY": 0, "ISLAND": 1, "DOT": 14, "ONE": 25, "TWO": 26};
 
+	/* Particle data:
+		size: size in pixels of the particles
+		speed: the baseline speed of the particle
+		xshift: how much the x-coordinate of the particle should be shifted, in terms of 24 pixels
+		yshift: ditto but y-coordinate
+		smooth: I forgot, but I think this was about if the particle disintegrates or not.
+	*/
 	const particleData = {
 		"dust":		{size: 8,	speed: 0.5,	xshift: 1/3,	yshift: 2/3,	smooth: false},
 		"sparkle":  {size: 8,	speed: 1.5,	xshift: 1/3,	yshift: 1/3,	smooth: false},
@@ -297,10 +305,15 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 	}
 	
 	const Worlds = ["Map", "The Lake", "Solitary Island", "Forest of Fall", "Temple Ruins", "Deep Forest", "Chasm", "Rocket Trip", "Flower Garden", "Volcanic Cavern", "Mountaintop"];
+	// First value for each world indicates the background color.
+	// The other value indicates the canvas color.
+	const worldColors = {"Map":["#080808","#15181f"],"The Lake":["#0e152c","#252c46"],"Solitary Island":["#150d0d","#281a1a"]}
+	// First number for each world indicates the number of levels needed to complete the world.
+	// The other number indicates the actual number of levels in the world.
+	const worldNumbers = {"The Lake":[8,15],"Solitary Island":[8,18]}
+	
 	let currentWorld = saveProgress["currentWorld"];
 	let worldProgress = saveProgress["worldProgress"];
-	
-	
 	let currentLevel = saveProgress["currentLevel"];
 	let levelWidth;
 	let levelHeight;
@@ -310,13 +323,9 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 	let newLevel = true;
 	let levelReady = false;
 	let exit = true;
-	
-	const worldColors = {"Map":["#080808","#15181f"],"The Lake":["#0e152c","#252c46"],"Solitary Island":["#150d0d","#281a1a"]}
 	let bgColor = worldColors[currentWorld][0];
 	document.body.style.backgroundColor = worldColors[currentWorld][1];
-	
-	const worldNumbers = {"The Lake":[8,15],"Solitary Island":[8,18]}
-	
+		
 	function Music() {
 		if (Worlds.includes(currentLevel)) {
 			playMusic('Map');
@@ -442,23 +451,26 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 	// Colors are taken in top-to-bottom, left-to-right order from spritesheetColors.png
 	let palette = palettes[currentWorld]
 	
-	//equations
+	// Equations (e.g. BABA IS YOU)
 	let eqs = [];
 
-	//transformations
+	// Transformations (e.g. BABA IS ROCK)
 	let tfs = [];
 
-	let gameObjects;
-	let inactives;
-	let particles;
+	let gameObjects; // All objects in the current level
+	let inactives; // I believe these are the deleted game objects, that need to be revived after undos.
+	let particles; // All current particles
 	
-	let buildLocs = [];
-	let path = [];
-	let revealed = []; //revealed path
+	let buildLocs = []; // I forgot
+	let path = []; // In world maps, the areas of the world where a path or a level eventually appears
+	let revealed = []; // Those path areas that are revealed
 	
+	// These are levels whose color palettes do not conform to their actual worlds.
+	// For example, the level "Float" is in the "Solitary Island" world,
+	// but its aesthetics make it look like it is in the "Map" world.
 	const subtleWorlds = {"Float": "Map"};
 
-	function initialize() {
+	function initialize() { // Function that is called at the start of each level.
 		levelReady = false;
 		if (currentLevel in subtleWorlds) {
 			bgColor = worldColors[subtleWorlds[currentLevel]][0];
@@ -861,7 +873,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 		}
 	}
 
-	function drawScene() {
+	function drawScene() { // Function that renders the game every frame
 		const unitX = canvas.width / levelWidth
 		const unitY = canvas.height / levelHeight
 		ctx.imageSmoothingEnabled = false;
