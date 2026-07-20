@@ -754,7 +754,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 		inactives[inactives.length - 1].push(obj);
 	}
 
-	function drawAsset(ctx, assetName, x, y, frameIndex = 0, spriteState = 0, color, particle = false) {
+		function drawAsset(ctx, assetName, x, y, frameIndex = 0, spriteState = 0, color, particle = false) {
 		const asset = assetPositions[assetName];
 		const unitX = canvas.width / levelWidth
 		const unitY = canvas.height / levelHeight
@@ -772,23 +772,23 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 			ctx.drawImage(
 				colorized,
 				0, 0, particleData[assetName].size, particleData[assetName].size,
-				(x - 1 + xshift) * unitX, (y - 1 + yshift) * unitY,
-				unitX * (particleData[assetName].size / size), unitY * (particleData[assetName].size / size)
+				Math.floor((x - 1 + xshift) * unitX), Math.floor((y - 1 + yshift) * unitY),
+				Math.ceil(unitX * (particleData[assetName].size / size)), Math.ceil(unitY * (particleData[assetName].size / size))
 			);
 		} else {
 			if (assetName === "CURSOR") {
 				ctx.drawImage(
 					colorized,
 					0, 0, cursorSize, cursorSize,
-					(x - 1 - (cursorSize / size - 1) / 2) * unitX, (y - 1  - (cursorSize / size - 1) / 2) * unitY,
-					unitX * cursorSize / size, unitY * cursorSize / size
+					Math.floor((x - 1 - (cursorSize / size - 1) / 2) * unitX), Math.floor((y - 1  - (cursorSize / size - 1) / 2) * unitY),
+					Math.ceil(unitX * cursorSize / size), Math.ceil(unitY * cursorSize / size)
 				);
 			} else {
 				ctx.drawImage(
 					colorized,
 					0, 0, size, size,
-					(x - 1) * unitX, (y - 1) * unitY,
-					unitX, unitY
+					Math.floor((x - 1) * unitX), Math.floor((y - 1) * unitY),
+					Math.ceil(unitX), Math.ceil(unitY)
 				);
 			}
 		}
