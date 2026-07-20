@@ -132,7 +132,7 @@ function playSFX(name, volume = 1.0, loop = false) {
 	return sfxSource;
 }
 
-const subtleWorlds = {"Float": "Map", "Bridge Building": "The Lake", "Bridge Building?": "The Lake"};
+const subtleWorlds = {"Float": "Map", "Bridge Building": "The Lake", "Bridge Building?": "The Lake", "...Bridges?": "The Lake"};
 
 let currentMusic = saveProgress["currentWorld"];
 if (saveProgress["currentLevel"] in subtleWorlds) {
@@ -145,6 +145,7 @@ const mapSoundPromise = loadSound('Map', 'Music/On the island.ogg');
 async function loadLevel(levelName) {
 	if (levelName[levelName.length - 1] === "?") {levelName = levelName.slice(0, -1) + "Q"}
 	if (levelName.slice(0, 3) === "...") {levelName = "ddd" + levelName.slice(3);}
+	console.log(levelName);
 	const response = await fetch(`Levels/${levelName}.json`);
 	const levelData = await response.json();
 	return levelData;
@@ -430,8 +431,6 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 	let buildLocs = [];
 	let path = [];
 	let revealed = []; //revealed path
-	
-	const subtleWorlds = {"Float": "Map", "Bridge Building": "The Lake", "Bridge Building?": "The Lake", "...Bridge?": "The Lake"};
 
 	function initialize() {
 		levelReady = false;
