@@ -144,6 +144,7 @@ const mapSoundPromise = loadSound('Map', 'Music/On the island.ogg');
 // Loads a JSON level file by name (without .json extension)
 async function loadLevel(levelName) {
 	if (levelName[levelName.length - 1] === "?") {levelName = levelName.slice(0, -1) + "Q"}
+	if (levelName.slice(0, 3) === "...") {levelName = "ddd" + levelName.slice(3);}
 	const response = await fetch(`Levels/${levelName}.json`);
 	const levelData = await response.json();
 	return levelData;
