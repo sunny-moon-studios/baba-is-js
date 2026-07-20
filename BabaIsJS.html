@@ -132,7 +132,7 @@ function playSFX(name, volume = 1.0, loop = false) {
 	return sfxSource;
 }
 
-const subtleWorlds = {"Float": "Map"};
+const subtleWorlds = {"Float": "Map", "Bridge Building": "The Lake"};
 
 let currentMusic = saveProgress["currentWorld"];
 if (saveProgress["currentLevel"] in subtleWorlds) {
@@ -684,7 +684,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 		
 		if (tfEnabled) {
 			for (const [noun, tfnouns] of Object.entries(tfs)) {
-				gameObjects.filter((obj) => (!obj.text && obj.type === noun)).forEach((obj) => {
+				gameObjects.filter((obj) => ((!obj.text && obj.type === noun) || (obj.text && noun === "TEXT"))).forEach((obj) => {
 					if (!tfs[noun].includes(noun)) {
 						obj.tf = tfnouns[0];
 						if (tfnouns.length > 1) {
@@ -699,7 +699,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 				});
 			}
 			for (const [noun, tfnouns] of Object.entries(tfs)) {
-				gameObjects.filter((obj) => (!obj.text && obj.type === noun)).forEach((obj) => {
+				gameObjects.filter((obj) => ((!obj.text && obj.type === noun) || (obj.text && noun === "TEXT"))).forEach((obj) => {
 					obj.type = obj.tf;
 				});
 			}
@@ -748,7 +748,8 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 
 	// e.g. is("BABA", "YOU")
 	function is(noun, property) {
-		return (!noun.text && noun.type in eqs && eqs[noun.type].includes(property)) || (property === "PUSH" && noun.text);
+		return (!noun.text && noun.type in eqs && eqs[noun.type].includes(property))
+			|| (noun.text && (property === "PUSH" || ("TEXT" in eqs && eqs["TEXT"].includes(property))));
 	}
 	
 	function del(obj) {
