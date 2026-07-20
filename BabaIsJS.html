@@ -132,7 +132,13 @@ function playSFX(name, volume = 1.0, loop = false) {
 	return sfxSource;
 }
 
-const overworldSoundPromise = loadSound('Overworld', 'Music/' + saveProgress["currentWorld"] + '.ogg');
+const subtleWorlds = {"Float": "Map"};
+
+let currentMusic = saveProgress["currentWorld"];
+if (saveProgress["currentLevel"] in subtleWorlds) {
+	currentMusic = subtleWorlds[saveProgress["currentLevel"]];
+}
+const overworldSoundPromise = loadSound('Overworld', 'Music/' + currentMusic + '.ogg');
 const mapSoundPromise = loadSound('Map', 'Music/On the island.ogg');
 
 // Loads a JSON level file by name (without .json extension)
@@ -424,17 +430,15 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 	let path = [];
 	let revealed = []; //revealed path
 	
-	const subtleWorlds = {"Float": "Map"};
-
 	function initialize() {
 		levelReady = false;
 		if (currentLevel in subtleWorlds) {
 			bgColor = worldColors[subtleWorlds[currentLevel]][0];
 			document.body.style.backgroundColor = worldColors[subtleWorlds[currentLevel]][1];
-			palette = palettes[subtleWorlds[currentLevel]]; 
+			palette = palettes[subtleWorlds[currentLevel]];
 			loadSound('Overworld', 'Music/' + subtleWorlds[currentLevel] + '.ogg');
 		}
-		if (lastLevel in subtleWorlds) {
+		if (lastLevel in subtleWorlds && lastLevel != currentLevel) {
 			bgColor = worldColors[currentWorld][0];
 			document.body.style.backgroundColor = worldColors[currentWorld][1];
 			palette = palettes[currentWorld]; 
@@ -586,9 +590,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 					noun.active = true;
 					tfnoun.active = true;
 					operators.forEach((oper) => {oper.active = (oper.active || (oper.type === "IS" && oper.x === noun.x + 1 && oper.y === noun.y));});	
-					if (tfEnabled) {
-						sntns.push({ startx: noun.x, starty: noun.y, endx: noun.x + 2, endy: noun.y, subjs: [noun.type], preds: [tfnoun.type]});
-					}
+					sntns.push({ startx: noun.x, starty: noun.y, endx: noun.x + 2, endy: noun.y, subjs: [noun.type], preds: [tfnoun.type]});
 				});
 			}
 			if (gameObjects.some((is) => (is.type === "IS" && is.y === noun.y + 1 && is.x === noun.x))) {
@@ -602,9 +604,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 					noun.active = true;
 					tfnoun.active = true;
 					operators.forEach((oper) => {oper.active = (oper.active || (oper.type === "IS" && oper.y === noun.y + 1 && oper.x === noun.x));});
-					if (tfEnabled) {
-						sntns.push({ startx: noun.x, starty: noun.y, endx: noun.x, endy: noun.y + 2, subjs: [noun.type], preds: [tfnoun.type]});
-					}
+					sntns.push({ startx: noun.x, starty: noun.y, endx: noun.x, endy: noun.y + 2, subjs: [noun.type], preds: [tfnoun.type]});
 				});
 			}
 		});
@@ -682,25 +682,27 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 			});
 		});
 		
-		for (const [noun, tfnouns] of Object.entries(tfs)) {
-			gameObjects.filter((obj) => (!obj.text && obj.type === noun)).forEach((obj) => {
-				if (!tfs[noun].includes(noun)) {
-					obj.tf = tfnouns[0];
-					if (tfnouns.length > 1) {
-						for (const tfnoun of tfnouns.slice(1)) {
-							gameObjects.push({ type: tfnoun, x: obj.x, y: obj.y, text: false, active: false, dir: 0, state: 0, frameSeed: Math.floor(Math.random() * 3), lastx: obj.x, lasty: obj.y, hist: new Array(moves).fill(0)});
-							if (gameObjects.length > 200) {alert("TOO COMPLEX!")}
+		if (tfEnabled) {
+			for (const [noun, tfnouns] of Object.entries(tfs)) {
+				gameObjects.filter((obj) => (!obj.text && obj.type === noun)).forEach((obj) => {
+					if (!tfs[noun].includes(noun)) {
+						obj.tf = tfnouns[0];
+						if (tfnouns.length > 1) {
+							for (const tfnoun of tfnouns.slice(1)) {
+								gameObjects.push({ type: tfnoun, x: obj.x, y: obj.y, text: false, active: false, dir: 0, state: 0, frameSeed: Math.floor(Math.random() * 3), lastx: obj.x, lasty: obj.y, hist: new Array(moves).fill(0)});
+								if (gameObjects.length > 200) {alert("TOO COMPLEX!")}
+							}
 						}
+					} else {
+						obj.tf = obj.type;
 					}
-				} else {
-					obj.tf = obj.type;
-				}
-			});
-		}
-		for (const [noun, tfnouns] of Object.entries(tfs)) {
-			gameObjects.filter((obj) => (!obj.text && obj.type === noun)).forEach((obj) => {
-				obj.type = obj.tf;
-			});
+				});
+			}
+			for (const [noun, tfnouns] of Object.entries(tfs)) {
+				gameObjects.filter((obj) => (!obj.text && obj.type === noun)).forEach((obj) => {
+					obj.type = obj.tf;
+				});
+			}
 		}
 	}
 
@@ -1379,6 +1381,9 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 						levelComplete = true;
 						exit = false;
 						nextLevel = lvl.name;
+						if (nextLevel in subtleWorlds) {
+							loadSound('Overworld', 'Music/' + subtleWorlds[nextLevel] + '.ogg');
+						}
 					}
 				}
 			}
