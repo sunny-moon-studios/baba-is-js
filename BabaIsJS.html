@@ -144,8 +144,8 @@ const mapSoundPromise = loadSound('Map', 'Music/On the island.ogg');
 // Loads a JSON level file by name (without .json extension)
 async function loadLevel(levelName) {
 	if (levelName[levelName.length - 1] === "?") {levelName = levelName.slice(0, -1) + "Q"}
+	if (levelName[levelName.length - 1] === "!") {levelName = levelName.slice(0, -1) + "E"}
 	if (levelName.slice(0, 3) === "...") {levelName = "ddd" + levelName.slice(3);}
-	console.log(levelName);
 	const response = await fetch(`Levels/${levelName}.json`);
 	const levelData = await response.json();
 	return levelData;
@@ -1345,10 +1345,6 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 					}
 					animatingS = true;
 				}
-			});
-		}
-		for (const obj of gameObjects) {
-			if (event.code != "KeyZ") {
 				if (event.code.startsWith("Arrow")) {
 					if (is(obj, "YOU")) {
 						let youDir;
@@ -1390,7 +1386,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 						}
 					}
 				}
-			}
+			});
 		}
 		if (walk) {playSFX('walk', 2);}
 		walk = false;
