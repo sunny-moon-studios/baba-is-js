@@ -1085,7 +1085,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 				while (hotCountdowns.length < hots.length) {
 					hotCountdowns.push(Math.random());
 				}
-				for (i = 0; i < hotCountdowns.length; i++) {
+				for (i = 0; i < hots.length; i++) {
 					hotCountdowns[i] -= 0.001;
 					if (hotCountdowns[i] < 0) {
 						hotCountdowns[i] += Math.random();
