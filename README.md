@@ -10,5 +10,5 @@ So, here is how you access the game we demade here from the top of my head:
 
 - Download zip, then extract.
 - Navigate to the local repository in a terminal.
-- Type ```python -m http.server <host name>``` where ```<host name>``` is number such as 8080 or 8081.
+- Type ```python -m http.server <host name>``` where ```<host name>``` is a number such as 8080 or 8081.
 - Navigate to ```localhost:<host name>``` on your browser.
