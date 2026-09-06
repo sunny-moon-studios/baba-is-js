@@ -2,13 +2,6 @@
   <img src="BIJ.gif" alt="Description">
 </p>
 
-I am focusing on university now so I do not have much time to write a good readme for this project.
+Humble attempt at programming Baba Is You in vanilla JS. Currently, the first 8 levels of Map and the first 2 sub-worlds have been made. Notable diversions from the original game are listed in Issues. Live at [https://sunny-moon-studios.github.io/baba-is-js/](https://sunny-moon-studios.github.io/baba-is-js/).
 
-But I figured, maybe the visitor would otherwise be disappointed, as I often become when I see a repo with no readmes or instructions.
-
-So, here is how you access the game we demade here from the top of my head:
-
-- Download zip, then extract.
-- Navigate to the local repository in a terminal.
-- Type ```python -m http.server <host name>``` where ```<host name>``` is a number such as 8080 or 8081.
-- Navigate to ```localhost:<host name>``` on your browser.
+Baba Is You © Hempuli — [https://hempuli.itch.io/baba](Support the original game)
