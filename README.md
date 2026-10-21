@@ -16,3 +16,15 @@ Development roadmap (from current state):
   <li>Have an existential crisis trying to remember Git commands.</li>
   <li>etc. (End of Thinking Capacity)</li>
 </ul>
+
+
+<b>LEVEL EDITOR CONTROLS:</b>
+
+WASD: Move cursor
+Arrow keys: Set direction
+Space: Place selected object
+T: Toggle text mode
+N: Select object
+B: Select color scheme
+Z: Undo last object placement
+P: Export level as JSON 
