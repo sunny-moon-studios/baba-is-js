@@ -12,7 +12,7 @@ Development roadmap (from current state):
 
 <ul>
   <li>Add levels sequentially.</li>
-  <li>Fix all issues listed on the <i>Issues<i> tab of the GitHub repository.</li>
+  <li>Fix all issues listed on the <i>Issues</i> tab of the GitHub repository.</li>
   <li>Have an existential crisis trying to remember Git commands.</li>
   <li>etc. (End of Thinking Capacity)</li>
 </ul>
