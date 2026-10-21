@@ -20,11 +20,11 @@ Development roadmap (from current state):
 
 <b>LEVEL EDITOR CONTROLS:</b>
 
-WASD: Move cursor
-Arrow keys: Set direction
-Space: Place selected object
-T: Toggle text mode
-N: Select object
-B: Select color scheme
-Z: Undo last object placement
-P: Export level as JSON 
+WASD: Move cursor <br/>
+Arrow keys: Set direction <br/>
+Space: Place selected object <br/>
+T: Toggle text mode <br/>
+N: Select object <br/>
+B: Select color scheme <br/>
+Z: Undo last object placement <br/>
+P: Export level as JSON  <br/>
