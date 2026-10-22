@@ -20,6 +20,7 @@
 <body>
 <canvas id="game" style="background: #080808"></canvas>
 <script>
+tutorial();
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d'); // Your canvas 2D context
 const size = 24;
@@ -457,6 +458,18 @@ function animate(time) {
 	requestAnimationFrame(animate);
 }
 
+function tutorial() {
+	alert("WASD to move cursor.");
+	alert("Arrow keys to set direction.");
+	alert("Space to place selected object.");
+	alert("T to toggle text mode.");
+	alert("N to select an object.");
+	alert("B to select a color scheme.");
+	alert("Z to Undo last action.");
+	alert("P to export level as a JSON.");
+	alert("U to access this tutorial again");
+}
+
 resizeCanvas();
 
 // Listen for window resize
@@ -479,6 +492,7 @@ window.addEventListener('keydown', function(event) {
 			case 'KeyN':		{type = prompt("What kind of object do you want?").toUpperCase(); if (type === "LEVEL") {lvlColor = prompt("You chose \"LEVEL\", which colour number do you want?"); lvlIcon = prompt("And what will your icon be?").toUpperCase(); lvlName = prompt("And the name?")}} break;
 			case 'KeyB':		{let worldColor = prompt("Which colour scheme do you want?"); if (worldColor in worldColors) { bgColor = worldColors[worldColor][0]; document.body.style.backgroundColor = worldColors[worldColor][1]; palette = palettes[worldColor];} } break;
 			case 'KeyZ':		{gameObjects.pop();} break;
+			case 'KeyU':        {tutorial()} break;
 			case 'KeyP':		{
 				let json = "{\"width\":" + levelWidth + ",\"height\":" + levelHeight + ",\"objects\":[";
 				let comma = false;
